@@ -17,6 +17,14 @@ pub mod solana_price_feed {
         feed.last_updated = 0;
         feed.num_updates = 0;
         feed.bump = ctx.bumps.feed;
+
+        emit!(FeedInitialized {
+            feed: feed.key(),
+            authority: feed.authority,
+            name: feed.name.clone(),
+            decimals,
+        });
+
         Ok(())
     }
 
@@ -46,7 +54,15 @@ pub mod solana_price_feed {
     }
 
     pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
+        let old_authority = ctx.accounts.feed.authority;
         ctx.accounts.feed.authority = ctx.accounts.new_authority.key();
+
+        emit!(AuthorityTransferred {
+            feed: ctx.accounts.feed.key(),
+            old_authority,
+            new_authority: ctx.accounts.new_authority.key(),
+        });
+
         Ok(())
     }
 }
@@ -95,6 +111,21 @@ pub struct PriceFeed {
     pub last_updated: i64,
     pub num_updates: u64,
     pub bump: u8,
+}
+
+#[event]
+pub struct FeedInitialized {
+    pub feed: Pubkey,
+    pub authority: Pubkey,
+    pub name: String,
+    pub decimals: u8,
+}
+
+#[event]
+pub struct AuthorityTransferred {
+    pub feed: Pubkey,
+    pub old_authority: Pubkey,
+    pub new_authority: Pubkey,
 }
 
 #[event]
